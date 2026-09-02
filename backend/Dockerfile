@@ -2,6 +2,8 @@ FROM oven/bun:alpine
 
 WORKDIR /app
 
+ENV PORT=3001
+
 COPY package.json bun.lock ./
 COPY prisma ./prisma/
 
