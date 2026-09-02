@@ -4,21 +4,24 @@ import {
   Category,
 } from '../types';
 
-const API_BASE = 'https://taskify-production-78a7.up.railway.app/api';
+const API_BASE =
+  import.meta.env.VITE_API_BASE_URL ||
+  'https://taskify-production-78a7.up.railway.app/api';
 
-async function handleResponse<T>(response: Response, defaultFallback: any = []): Promise<T> {
+async function safeFetch<T>(url: string, options?: RequestInit, fallback: any = []): Promise<T> {
   try {
-    const json = await response.json();
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      console.warn(`API HTTP ${res.status} warning for ${url}`);
+    }
+    const json = await res.json();
     if (json.data !== undefined) {
       return json.data as T;
     }
-    if (json.success === false) {
-      console.warn('API Notice:', json.message);
-    }
-    return defaultFallback as T;
+    return fallback as T;
   } catch (err) {
-    console.error('API Response parsing error:', err);
-    return defaultFallback as T;
+    console.warn(`API network fallback for ${url}:`, err);
+    return fallback as T;
   }
 }
 
@@ -39,8 +42,7 @@ export const api = {
       overdueWarningList: [],
       weeklyProgressChart: [],
     };
-    const res = await fetch(`${API_BASE}/dashboard/stats`);
-    return handleResponse<DashboardData>(res, fallbackStats);
+    return safeFetch<DashboardData>(`${API_BASE}/dashboard/stats`, undefined, fallbackStats);
   },
 
   // Tasks CRUD
@@ -56,46 +58,39 @@ export const api = {
     if (params?.priority) query.append('priority', params.priority);
     if (params?.categoryId) query.append('categoryId', params.categoryId);
 
-    const res = await fetch(`${API_BASE}/tasks?${query.toString()}`);
-    return handleResponse<Task[]>(res, []);
+    return safeFetch<Task[]>(`${API_BASE}/tasks?${query.toString()}`, undefined, []);
   },
 
   async createTask(data: Partial<Task>): Promise<Task> {
-    const res = await fetch(`${API_BASE}/tasks`, {
+    return safeFetch<Task>(`${API_BASE}/tasks`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    });
-    return handleResponse<Task>(res, {} as Task);
+    }, {} as Task);
   },
 
   async updateTask(id: string, data: Partial<Task>): Promise<Task> {
-    const res = await fetch(`${API_BASE}/tasks/${id}`, {
+    return safeFetch<Task>(`${API_BASE}/tasks/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    });
-    return handleResponse<Task>(res, {} as Task);
+    }, {} as Task);
   },
 
   async deleteTask(id: string): Promise<void> {
-    await fetch(`${API_BASE}/tasks/${id}`, {
-      method: 'DELETE',
-    });
+    await safeFetch(`${API_BASE}/tasks/${id}`, { method: 'DELETE' }, null);
   },
 
   // Categories CRUD
   async getCategories(): Promise<Category[]> {
-    const res = await fetch(`${API_BASE}/categories`);
-    return handleResponse<Category[]>(res, []);
+    return safeFetch<Category[]>(`${API_BASE}/categories`, undefined, []);
   },
 
   async createCategory(data: { name: string; color?: string; icon?: string }): Promise<Category> {
-    const res = await fetch(`${API_BASE}/categories`, {
+    return safeFetch<Category>(`${API_BASE}/categories`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
-    });
-    return handleResponse<Category>(res, {} as Category);
+    }, {} as Category);
   },
 };
