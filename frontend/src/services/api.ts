@@ -5,7 +5,7 @@ import {
 } from '../types';
 
 const API_BASE =
-  import.meta.env.VITE_API_BASE_URL ||
+  (import.meta as any).env?.VITE_API_BASE_URL ||
   'https://taskify-production-78a7.up.railway.app/api';
 
 async function safeFetch<T>(url: string, options?: RequestInit, fallback: any = []): Promise<T> {
