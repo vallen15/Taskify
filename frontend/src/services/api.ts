@@ -4,7 +4,7 @@ import {
   Category,
 } from '../types';
 
-const API_BASE = '/api';
+const API_BASE = 'https://taskify-production-78a7.up.railway.app/api';
 
 async function handleResponse<T>(response: Response, defaultFallback: any = []): Promise<T> {
   try {
